@@ -1,0 +1,1597 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<script>
+  try { if (localStorage.getItem("cxp:gate") !== "ok") document.documentElement.classList.add("locked"); }
+  catch (e) { document.documentElement.classList.add("locked"); }
+</script>
+<style>
+  html.locked body > :not(#gate) { display: none !important; }
+  #gate { display: none; }
+  html.locked #gate { display: grid; place-items: center; min-height: 100vh; padding: 16px; background: var(--bg); color: var(--ink); font-family: "Atkinson Hyperlegible", "Onest", system-ui, sans-serif; }
+  #gate form { width: min(100%, 360px); background: var(--surface); border: 1px solid var(--line); border-radius: 16px; padding: 28px 24px; display: grid; gap: 14px; }
+  #gate h1 { margin: 0; font-family: "Bricolage Grotesque", system-ui, sans-serif; font-size: 1.5rem; }
+  #gate p { margin: 0; color: var(--muted); }
+  #gate input { font: inherit; font-size: 1rem; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+  #gate button { font: inherit; font-weight: 700; padding: 12px 14px; border-radius: 10px; border: 0; background: var(--accent); color: var(--accent-ink); cursor: pointer; }
+  #gate .err { color: var(--bad); min-height: 1.3em; }
+</style>
+<title>Client Experience Playbook</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a merit-badge field guide. Hero with badge counter, filterable badge grid, then three drills (quiz, meeting flight check, payroll calendar). */
+:root {
+  --bg: #EDF0F5;
+  --surface: #FFFFFF;
+  --sunk: #E3E8F0;
+  --ink: #15203A;
+  --muted: #56637E;
+  --line: #D3DAE6;
+  --accent: #2547D0;
+  --accent-ink: #FFFFFF;
+  --gold: #E3A11A;
+  --gold-soft: #FBEFD3;
+  --gold-ink: #5B3D00;
+  --good: #1D7F55;
+  --good-soft: #DDF2E8;
+  --bad: #B6400E;
+  --bad-soft: #FBE6DC;
+  --p-own: #2547D0;
+  --p-rel: #0B7F80;
+  --p-clar: #7046C9;
+  --p-meet: #C25A12;
+  --p-surp: #B0305F;
+  --p-time: #3D7A1E;
+  --hatch: rgba(37, 71, 208, .16);
+  /* Locales can override these three (see LOCALES[*].meta.fonts) for scripts the default faces lack. */
+  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1424; --surface: #161F35; --sunk: #1D2842; --ink: #E7ECF6; --muted: #9BA7C0; --line: #2A3552;
+    --accent: #8FA8FF; --accent-ink: #0E1424; --gold: #F4BE4C; --gold-soft: #3A2E12; --gold-ink: #F9DB98;
+    --good: #5ACB98; --good-soft: #143528; --bad: #F08A5D; --bad-soft: #3A1E14;
+    --p-own: #8FA8FF; --p-rel: #4FC9C9; --p-clar: #B79BFF; --p-meet: #F29A55; --p-surp: #F07FA6; --p-time: #8FCB6A;
+    --hatch: rgba(143, 168, 255, .18);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1424; --surface: #161F35; --sunk: #1D2842; --ink: #E7ECF6; --muted: #9BA7C0; --line: #2A3552;
+  --accent: #8FA8FF; --accent-ink: #0E1424; --gold: #F4BE4C; --gold-soft: #3A2E12; --gold-ink: #F9DB98;
+  --good: #5ACB98; --good-soft: #143528; --bad: #F08A5D; --bad-soft: #3A1E14;
+  --p-own: #8FA8FF; --p-rel: #4FC9C9; --p-clar: #B79BFF; --p-meet: #F29A55; --p-surp: #F07FA6; --p-time: #8FCB6A;
+  --hatch: rgba(143, 168, 255, .18);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.55;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 0 64px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; }
+h1, h2, h3 { font-family: var(--font-display); text-wrap: balance; margin: 0; line-height: 1.1; }
+h1 { font-size: clamp(2.3rem, 6vw, 4rem); font-weight: 800; letter-spacing: -.02em; }
+h2 { font-size: clamp(1.6rem, 3.5vw, 2.2rem); font-weight: 800; letter-spacing: -.01em; }
+h3 { font-size: 1.15rem; font-weight: 700; }
+p { margin: 0; }
+.eyebrow { font-family: var(--font-mono); font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 60ch; }
+button, select { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+/* nav */
+.nav {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid var(--line);
+  margin-inline: calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
+  padding: 10px max(16px, env(safe-area-inset-right, 0px)) 10px max(16px, env(safe-area-inset-left, 0px));
+}
+.nav-in { max-width: 1120px; margin: 0 auto; display: flex; gap: 6px 18px; flex-wrap: wrap; align-items: center; font-size: .92rem; }
+.nav a { color: var(--muted); text-decoration: none; font-weight: 700; }
+.nav a:hover { color: var(--accent); }
+.nav .brand { font-family: var(--font-display); color: var(--ink); font-weight: 800; margin-right: auto; }
+.lang { background: var(--surface); border: 1.5px solid var(--line); border-radius: 999px; padding: 4px 10px; font-weight: 700; font-size: .85rem; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 1fr auto; gap: 32px; align-items: center; padding-block: 48px 32px; }
+.hero > div:first-child { display: grid; gap: 16px; min-width: 0; }
+.meter { display: grid; justify-items: center; gap: 8px; text-align: center; }
+.meter svg { width: 168px; height: 168px; }
+.meter .num { font-family: var(--font-display); font-weight: 800; font-size: 2.6rem; fill: var(--ink); }
+.meter .den { font-family: var(--font-mono); font-size: .8rem; fill: var(--muted); }
+.meter .rank { font-family: var(--font-display); font-weight: 700; font-size: 1.05rem; }
+.meter small { color: var(--muted); font-size: .85rem; max-width: 22ch; }
+@media (max-width: 680px) { .hero { grid-template-columns: 1fr; } .meter { justify-items: start; text-align: left; } }
+
+/* principles strip */
+.why-strip { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 40px; }
+.why-strip div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 14px 16px; display: grid; gap: 4px; }
+.why-strip b { font-family: var(--font-display); font-size: 1.05rem; }
+.why-strip span { color: var(--muted); font-size: .93rem; }
+
+section { padding-block: 40px 8px; scroll-margin-top: 64px; display: grid; gap: 18px; }
+.sec-head { display: grid; gap: 8px; }
+
+/* filters */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1.5px solid var(--line); background: var(--surface); border-radius: 999px;
+  padding: 6px 14px; font-weight: 700; font-size: .9rem; display: inline-flex; align-items: center; gap: 8px;
+}
+.chip .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--c, var(--muted)); }
+.chip[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--bg); }
+
+/* badge grid */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px; }
+.card {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--r);
+  padding: 18px; display: grid; grid-template-columns: 56px 1fr; gap: 6px 14px; align-content: start;
+  transition: border-color .2s, box-shadow .2s; min-width: 0;
+}
+.card.earned { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.badge { grid-row: span 2; width: 56px; height: 56px; position: relative; }
+.badge svg { width: 56px; height: 56px; display: block; }
+.badge .ring { fill: none; stroke: var(--c); stroke-width: 3; stroke-dasharray: 3 4; opacity: .55; }
+.card.earned .badge .ring { stroke: var(--gold); stroke-dasharray: none; opacity: 1; stroke-width: 4; }
+.badge .disc { fill: var(--c); }
+.badge .glyph { fill: var(--surface); font-family: var(--font-display); font-weight: 800; font-size: 20px; }
+.card .tag { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; color: var(--c); font-weight: 700; align-self: end; }
+.card h3 { align-self: start; min-width: 0; overflow-wrap: anywhere; }
+.card .rule { grid-column: 1 / -1; color: var(--ink); margin-top: 6px; }
+.card details { grid-column: 1 / -1; margin-top: 4px; }
+.card summary { cursor: pointer; color: var(--accent); font-weight: 700; font-size: .92rem; list-style: none; padding-block: 4px; }
+.card summary::-webkit-details-marker { display: none; }
+.card summary::before { content: "+ "; }
+.card details[open] summary::before { content: "− "; }
+.detail { display: grid; gap: 10px; padding-top: 8px; font-size: .95rem; }
+.detail .why { color: var(--muted); }
+.ex { border-radius: 10px; padding: 10px 12px; display: grid; gap: 2px; }
+.ex b { font-family: var(--font-mono); font-size: .7rem; letter-spacing: .1em; text-transform: uppercase; }
+.ex.do { background: var(--good-soft); } .ex.do b { color: var(--good); }
+.ex.dont { background: var(--bad-soft); } .ex.dont b { color: var(--bad); }
+.claim {
+  grid-column: 1 / -1; justify-self: start; margin-top: 8px;
+  border: 1.5px dashed var(--line); background: transparent; border-radius: 999px; padding: 6px 14px;
+  font-weight: 700; font-size: .88rem; color: var(--muted);
+}
+.claim:hover { border-color: var(--gold); color: var(--ink); }
+.card.earned .claim { border-style: solid; border-color: var(--gold); background: var(--gold-soft); color: var(--gold-ink); }
+
+/* quiz */
+.quiz { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: clamp(16px, 3vw, 28px); display: grid; gap: 16px; }
+.quiz-top { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: baseline; }
+.pips { display: flex; gap: 6px; }
+.pip { width: 26px; height: 6px; border-radius: 3px; background: var(--sunk); }
+.pip.right { background: var(--good); } .pip.wrong { background: var(--bad); } .pip.now { background: var(--accent); }
+.scenario { font-size: 1.12rem; font-weight: 700; max-width: 70ch; }
+.opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 680px) { .opts { grid-template-columns: 1fr; } }
+.opt {
+  text-align: left; background: var(--sunk); border: 2px solid transparent; border-radius: 12px; padding: 14px 16px;
+  display: grid; gap: 6px; font-size: .97rem; min-width: 0;
+}
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt .lab { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; color: var(--muted); font-weight: 700; }
+.opt.right { border-color: var(--good); background: var(--good-soft); }
+.opt.wrong { border-color: var(--bad); background: var(--bad-soft); }
+.opt:disabled { cursor: default; }
+.verdict { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.verdict p { max-width: 70ch; }
+.btn { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 999px; padding: 9px 18px; font-weight: 700; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1.5px solid var(--accent); }
+
+/* meeting */
+.phases { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 820px) { .phases { grid-template-columns: 1fr; } }
+.phase { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.phase-h { display: flex; align-items: baseline; gap: 10px; }
+.phase-h .n { font-family: var(--font-mono); font-weight: 700; color: var(--p-meet); }
+.check { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; cursor: pointer; font-size: .96rem; }
+.check input { width: 18px; height: 18px; margin: 3px 0 0; accent-color: var(--good); }
+.check small { display: block; color: var(--muted); font-size: .85rem; }
+.check:has(input:checked) span { color: var(--muted); }
+.check:has(input:checked) span > b { text-decoration: line-through; text-decoration-color: var(--good); }
+.meet-bar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; justify-content: space-between; }
+.template { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; }
+.template-h { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 10px 16px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.template pre { margin: 0; padding: 16px; overflow-x: auto; font-family: var(--font-mono); font-size: .84rem; line-height: 1.6; white-space: pre; }
+
+/* payroll */
+.pay { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 820px) { .pay { grid-template-columns: 1fr; } }
+.cal { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 16px; display: grid; gap: 10px; }
+.cal-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.cal-h h3 { font-size: 1.2rem; }
+.cal-h button { background: var(--sunk); border: 0; border-radius: 8px; width: 34px; height: 34px; font-weight: 700; }
+.days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; font-variant-numeric: tabular-nums; }
+.dow { font-family: var(--font-mono); font-size: .7rem; color: var(--muted); text-align: center; padding-bottom: 2px; }
+.day { aspect-ratio: 1 / 1; max-width: 100%; border-radius: 8px; display: grid; place-items: center; font-size: .92rem; font-weight: 700; color: var(--muted); background: var(--sunk); position: relative; }
+.day.blank { background: transparent; }
+.day.core { background: var(--accent); color: var(--accent-ink); }
+.day.wiggle { background: repeating-linear-gradient(135deg, var(--hatch) 0 5px, transparent 5px 10px), var(--sunk); color: var(--ink); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.day.today::after { content: ""; position: absolute; bottom: 5px; width: 6px; height: 6px; border-radius: 50%; background: var(--gold); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .85rem; color: var(--muted); }
+.legend span { display: inline-flex; gap: 6px; align-items: center; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; flex: none; }
+.sw.core { background: var(--accent); }
+.sw.wiggle { background: repeating-linear-gradient(135deg, var(--hatch) 0 3px, transparent 3px 6px), var(--sunk); box-shadow: inset 0 0 0 1.5px var(--accent); }
+.sw.today { background: var(--gold); border-radius: 50%; width: 8px; height: 8px; }
+.pay-side { display: grid; gap: 14px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 18px; display: grid; gap: 8px; }
+.stat .big { font-family: var(--font-display); font-weight: 800; font-size: 3rem; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat label { font-weight: 700; display: flex; justify-content: space-between; gap: 8px; }
+.stat input[type=range] { width: 100%; accent-color: var(--accent); }
+.stat .note { color: var(--muted); }
+.daily { background: var(--gold-soft); color: var(--gold-ink); border-radius: var(--r); padding: 18px; display: grid; gap: 8px; }
+.daily ol { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; }
+.daily h3 { color: var(--gold-ink); }
+
+/* guided mode entry */
+.cta { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center; }
+.cta .btn { font-size: 1.05rem; padding: 12px 22px; }
+.cta-note { flex-basis: 100%; color: var(--muted); font-size: .92rem; }
+
+/* guided mode */
+.tour {
+  position: fixed; inset: 0; z-index: 20; display: grid; place-items: center;
+  background: color-mix(in srgb, var(--ink) 45%, transparent);
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+}
+.tour-panel {
+  background: var(--bg); border: 1px solid var(--line); border-radius: 20px;
+  width: min(100%, 760px); height: min(100%, 820px);
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 60px rgba(10, 16, 32, .35);
+}
+@media (max-width: 560px) { .tour { padding: 0; } .tour-panel { border-radius: 0; height: 100%; border: 0; } }
+.tour-top { display: flex; gap: 12px; align-items: center; padding: 14px 18px 10px; }
+.tour-secs { flex: 1; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 6px; min-width: 0; }
+.seg { display: grid; gap: 5px; min-width: 0; }
+.seg span { font-family: var(--font-mono); font-size: .66rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg.on span { color: var(--ink); }
+.seg i { display: block; height: 5px; border-radius: 3px; background: var(--sunk); overflow: hidden; }
+.seg i b { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+@media (max-width: 560px) { .seg:not(.on) span { visibility: hidden; } }
+.tour-x { background: transparent; border: 1.5px solid var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 700; font-size: .85rem; white-space: nowrap; }
+.tour-body { flex: 1; overflow-y: auto; padding: 18px clamp(18px, 4vw, 40px) 24px; display: grid; gap: 16px; align-content: start; }
+.tour-body h2 { font-size: clamp(1.6rem, 4vw, 2.3rem); outline: none; }
+.tour-body .big-rule { font-size: 1.2rem; font-weight: 700; max-width: 52ch; }
+.tour-badge { display: flex; gap: 14px; align-items: center; }
+.tour-badge svg { width: 64px; height: 64px; flex: none; }
+.tour-badge .ring { fill: none; stroke: var(--c); stroke-width: 3; stroke-dasharray: 3 4; opacity: .55; }
+.tour-badge.earned .ring { stroke: var(--gold); stroke-dasharray: none; opacity: 1; stroke-width: 4; }
+.tour-badge .disc { fill: var(--c); }
+.tour-badge .glyph { fill: var(--bg); font-family: var(--font-display); font-weight: 800; font-size: 20px; }
+.tour-badge .tag { font-family: var(--font-mono); font-size: .72rem; letter-spacing: .1em; text-transform: uppercase; color: var(--c); font-weight: 700; }
+.tour-mini { display: grid; gap: 10px; }
+.tour-mini .phase { padding: 14px; }
+.tour-mini ul { margin: 0; padding-left: 1.1em; display: grid; gap: 2px; }
+.later-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.later-list span { background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-weight: 700; font-size: .9rem; }
+.tour-foot { display: flex; align-items: center; gap: 10px; padding: 12px 18px max(12px, env(safe-area-inset-bottom, 0px)); border-top: 1px solid var(--line); background: var(--surface); flex-wrap: wrap; }
+.tour-foot .count { color: var(--muted); font-size: .88rem; font-variant-numeric: tabular-nums; margin-right: auto; }
+.tour-foot .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.btn:disabled { opacity: .4; cursor: default; }
+body.tour-open { overflow: hidden; }
+
+footer { margin-top: 48px; padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); font-size: .88rem; display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.toast { position: fixed; left: 50%; transform: translateX(-50%); bottom: calc(20px + env(safe-area-inset-bottom, 0px)); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 999px; font-weight: 700; font-size: .9rem; opacity: 0; pointer-events: none; transition: opacity .2s; }
+.toast.show { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; scroll-behavior: auto !important; } }
+html { scroll-behavior: smooth; }
+</style>
+
+<!--
+  All visible text lives in LOCALES in the script below.
+  Static markup uses data-i18n="key" (text), data-i18n-html="key" (trusted markup from the locale file),
+  and data-i18n-attr="attr:key; attr2:key2" (attributes). Element ids and data keys never change between languages.
+-->
+<div class="wrap">
+  <nav class="nav" data-i18n-attr="aria-label:nav.label">
+    <div class="nav-in">
+      <span class="brand" data-i18n="nav.brand"></span>
+      <a href="#badges" data-i18n="nav.badges"></a>
+      <a href="#quiz" data-i18n="nav.quiz"></a>
+      <a href="#meetings" data-i18n="nav.meetings"></a>
+      <a href="#time" data-i18n="nav.time"></a>
+      <select class="lang" id="lang" data-i18n-attr="aria-label:nav.language" hidden></select>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div>
+      <span class="eyebrow" data-i18n="hero.eyebrow"></span>
+      <h1 data-i18n="hero.title"></h1>
+      <p class="lede" data-i18n="hero.lede"></p>
+      <div class="cta" id="cta"></div>
+    </div>
+    <div class="meter" aria-live="polite">
+      <svg viewBox="0 0 168 168" role="img" aria-labelledby="meterLabel">
+        <title id="meterLabel" data-i18n="meter.label"></title>
+        <circle cx="84" cy="84" r="70" fill="none" stroke="var(--sunk)" stroke-width="14"/>
+        <circle id="meterArc" cx="84" cy="84" r="70" fill="none" stroke="var(--gold)" stroke-width="14" stroke-linecap="round" transform="rotate(-90 84 84)" stroke-dasharray="0 440"/>
+        <text id="meterNum" class="num" x="84" y="90" text-anchor="middle">0</text>
+        <text id="meterDen" class="den" x="84" y="114" text-anchor="middle"></text>
+      </svg>
+      <span class="rank" id="rank"></span>
+      <small data-i18n="meter.privacy"></small>
+    </div>
+  </header>
+
+  <div class="why-strip" id="principles" data-i18n-attr="aria-label:principles.label"></div>
+
+  <section id="badges">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="badges.eyebrow"></span>
+      <h2 data-i18n="badges.title"></h2>
+    </div>
+    <div class="chips" id="chips" role="group" data-i18n-attr="aria-label:badges.filterLabel"></div>
+    <div class="grid" id="grid"></div>
+  </section>
+
+  <section id="quiz">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="quiz.eyebrow"></span>
+      <h2 data-i18n="quiz.title"></h2>
+      <p class="lede" data-i18n="quiz.lede"></p>
+    </div>
+    <div class="quiz" id="quizBox"></div>
+  </section>
+
+  <section id="meetings">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="meet.eyebrow"></span>
+      <h2 data-i18n="meet.title"></h2>
+      <p class="lede" data-i18n="meet.lede"></p>
+    </div>
+    <div class="phases" id="phases"></div>
+    <div class="meet-bar">
+      <span id="meetCount" class="eyebrow"></span>
+      <button class="btn ghost" id="meetReset" type="button" data-i18n="meet.reset"></button>
+    </div>
+    <div class="template">
+      <div class="template-h">
+        <b data-i18n="meet.templateTitle"></b>
+        <button class="btn" id="copyTpl" type="button" data-i18n="meet.copy"></button>
+      </div>
+      <pre id="tpl"></pre>
+    </div>
+  </section>
+
+  <section id="time">
+    <div class="sec-head">
+      <span class="eyebrow" data-i18n="pay.eyebrow"></span>
+      <h2 data-i18n="pay.title"></h2>
+      <p class="lede" data-i18n="pay.lede"></p>
+    </div>
+    <div class="pay">
+      <div class="cal">
+        <div class="cal-h">
+          <button type="button" id="prevM" data-i18n-attr="aria-label:pay.prevMonth">‹</button>
+          <h3 id="calTitle"></h3>
+          <button type="button" id="nextM" data-i18n-attr="aria-label:pay.nextMonth">›</button>
+        </div>
+        <div class="days" id="days"></div>
+        <div class="legend">
+          <span><i class="sw core"></i><span data-i18n="pay.legendCore"></span></span>
+          <span><i class="sw wiggle"></i><span data-i18n="pay.legendWiggle"></span></span>
+          <span><i class="sw today"></i><span data-i18n="pay.legendToday"></span></span>
+        </div>
+      </div>
+      <div class="pay-side">
+        <div class="stat">
+          <label for="wiggle"><span data-i18n="pay.wiggleLabel"></span><span id="wiggleVal"></span></label>
+          <input type="range" id="wiggle" min="0" max="5" value="5">
+          <span class="big" id="coverage">0%</span>
+          <p class="note" id="coverageNote"></p>
+        </div>
+        <div class="daily">
+          <h3 data-i18n="daily.title"></h3>
+          <ol id="dailySteps"></ol>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <span data-i18n="footer.note"></span>
+    <button class="btn ghost" id="resetAll" type="button" data-i18n="footer.reset"></button>
+  </footer>
+</div>
+<div class="tour" id="tour" role="dialog" aria-modal="true" data-i18n-attr="aria-label:tour.dialogLabel" hidden>
+  <div class="tour-panel">
+    <div class="tour-top">
+      <div class="tour-secs" id="tourSecs"></div>
+      <button class="tour-x" id="tourExit" type="button" data-i18n="tour.exit"></button>
+    </div>
+    <div class="tour-body" id="tourBody"></div>
+    <div class="tour-foot">
+      <button class="btn ghost" id="tourBack" type="button" data-i18n="tour.back"></button>
+      <span class="count" id="tourCount"></span>
+      <div class="actions" id="tourActions"></div>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* =====================================================================
+   LOCALES — every word a viewer sees lives here.
+
+   To add a language:
+   1. Copy the whole `en` block, rename the key (e.g. `uk`), translate the values.
+   2. Keep every key and every `id` as-is. Only translate the text.
+   3. Keep {placeholders} like {n}, {total}, {title} intact; move them wherever the grammar needs.
+   4. Plurals are objects keyed by Intl.PluralRules categories.
+      English uses one/other; Ukrainian uses one/few/many/other.
+   5. Anything missing from a locale falls back to English, so partial translations are safe to ship.
+   6. If the default fonts lack the script (Bricolage and Atkinson have no Cyrillic),
+      set meta.fonts to a Google Fonts URL plus the families to use.
+   ===================================================================== */
+const LOCALES = {
+  en: {
+    meta: { name: "English", dateLocale: "en-US", weekStartsOn: 1 },
+
+    ui: {
+      "nav.label": "Sections",
+      "nav.brand": "CX Playbook",
+      "nav.badges": "Badges",
+      "nav.quiz": "Which would you send?",
+      "nav.meetings": "Meeting flight check",
+      "nav.time": "Time & payroll",
+      "nav.language": "Language",
+
+      "hero.eyebrow": "Internal field guide · PMs & developers",
+      "hero.title": "Client Experience Playbook",
+      "hero.lede": "The small habits that make clients feel looked after. Read a badge, check the example, and claim it once it's how you already work.",
+
+      "meter.label": "Badges claimed",
+      "meter.of": { one: "of {total} badge", other: "of {total} badges" },
+      "meter.privacy": "Only you can see your progress.",
+
+      "tour.dialogLabel": "Guided playbook",
+      "tour.start": "Start the playbook",
+      "tour.startNote": "About 10 minutes, one habit at a time. Stop whenever you like and pick up where you left off.",
+      "tour.continue": "Continue: step {n} of {total}",
+      "tour.restart": "Start over",
+      "tour.again": "Take it again",
+      "tour.finishedNote": { one: "Finished. {n} badge claimed.", other: "Finished. {n} badges claimed." },
+      "tour.savedAccount": "Your place is saved to your account, so it follows you to any device.",
+      "tour.savedLocal": "Your place is saved in this browser.",
+      "tour.exit": "Save & exit",
+      "tour.back": "Back",
+      "tour.next": "Next",
+      "tour.step": "Step {n} of {total}",
+      "tour.sec.start": "Basics",
+      "tour.sec.badges": "Habits",
+      "tour.sec.quiz": "Quiz",
+      "tour.sec.meetings": "Meetings",
+      "tour.sec.time": "Time",
+      "tour.sec.finish": "Finish",
+      "tour.introTitle": "Welcome to the playbook",
+      "tour.introBody": "You'll go through {badges} habits one at a time, try {quiz} quick scenarios, then finish with meetings and time logging. For each habit, say whether it's already how you work or something to practice.",
+      "tour.principlesTitle": "Four ideas behind every habit",
+      "tour.doThis": "★ I do this already",
+      "tour.workOn": "I'll work on it",
+      "tour.isClaimed": "You've claimed this badge.",
+      "tour.isLater": "On your practice list.",
+      "tour.meetingTitle": "Every meeting has three phases",
+      "tour.meetingBody": "The full checklist and the notes template are on the main page. Use them before each client meeting.",
+      "tour.payTitle": "Log time every day",
+      "tour.payBody": "Payroll runs in the first and third week of the month, give or take a few days. Add that wiggle room and {pct} of this month could be a cutoff, so there is no safe day to fall behind.",
+      "tour.finishTitle": "You finished the playbook",
+      "tour.finishClaimed": { one: "You claimed {n} of {total} badges.", other: "You claimed {n} of {total} badges." },
+      "tour.finishQuiz": "Quiz score: {score} of {total}.",
+      "tour.finishPractice": "Your practice list",
+      "tour.finishNone": "Nothing on your practice list.",
+      "tour.close": "Back to the page",
+
+      "principles.label": "First principles",
+
+      "badges.eyebrow": "The badges",
+      "badges.title": "Six families, one idea: make it easy to trust us",
+      "badges.filterLabel": "Filter badges",
+      "badges.all": "All badges",
+      "badges.details": "Why it matters + example",
+      "badges.do": "Do",
+      "badges.instead": "Instead of",
+      "badges.claim": "☆ I do this",
+      "badges.claimed": "★ Claimed",
+      "badges.toastClaimed": "Badge claimed: {title}",
+
+      "quiz.eyebrow": "Drill 1",
+      "quiz.title": "Which would you send?",
+      "quiz.lede": "Real situations, two replies. Pick the one that leaves the client feeling handled.",
+      "quiz.progress": "Scenario {n} of {total}",
+      "quiz.option": "Option {letter}",
+      "quiz.letter.a": "A",
+      "quiz.letter.b": "B",
+      "quiz.right": "Nice.",
+      "quiz.wrong": "Not quite.",
+      "quiz.next": "Next scenario",
+      "quiz.seeScore": "See score",
+      "quiz.done": "Done",
+      "quiz.score": "{score} of {total}.",
+      "quiz.perfect": "Perfect run. Go claim some badges.",
+      "quiz.good": "Solid. Review the ones you missed above.",
+      "quiz.retry": "Worth a second pass through the badges.",
+      "quiz.again": "Play again",
+
+      "meet.eyebrow": "Drill 2",
+      "meet.title": "Meeting flight check",
+      "meet.lede": "Run it like a pre-flight list. Tick as you go; reset it for the next meeting.",
+      "meet.count": "{n} of {total} checked",
+      "meet.allClear": "All clear. Nice meeting.",
+      "meet.reset": "Reset for next meeting",
+      "meet.toastReset": "Ready for the next meeting",
+      "meet.templateTitle": "Notes email template",
+      "meet.copy": "Copy template",
+      "meet.copied": "Template copied",
+      "meet.selected": "Selected. Press Ctrl+C to copy",
+
+      "pay.eyebrow": "Drill 3",
+      "pay.title": "Why \"log it daily\" is the only safe rule",
+      "pay.lede": "Payroll runs in the first and third week of the month, give or take a few days. Slide the wiggle room and watch how much of the month could be a cutoff.",
+      "pay.prevMonth": "Previous month",
+      "pay.nextMonth": "Next month",
+      "pay.legendCore": "Payroll week (1st, 3rd)",
+      "pay.legendWiggle": "Could also be a cutoff",
+      "pay.legendToday": "Today",
+      "pay.wiggleLabel": "Wiggle room",
+      "pay.wiggleNone": "None",
+      "pay.wiggleDays": { one: "±{n} day", other: "±{n} days" },
+      "pay.noteHigh": "With ±{w} days, {covered} of {dim} days this month could land in a payroll window. There is no safe day to fall behind.",
+      "pay.noteLow": "of days this month sit in or near a payroll window. Real cutoffs drift more than this, so log daily anyway.",
+
+      "daily.title": "Daily close-out (5 minutes)",
+
+      "footer.note": "Internal reference. Examples use made-up names.",
+      "footer.reset": "Clear my badges",
+      "footer.toastReset": "Badges cleared",
+    },
+
+    principles: [
+      { title: "Clients buy confidence", body: "They want to know someone has it handled, without having to check." },
+      { title: "Surprises cost trust", body: "Bad news early is a plan. Bad news late is a problem." },
+      { title: "Their time is the budget", body: "Every unclear ask or rambling meeting spends it." },
+      { title: "Written beats remembered", body: "If it isn't written down and sent, it didn't happen." },
+    ],
+
+    pillars: {
+      own:  { name: "Ownership",    glyph: "O" },
+      rel:  { name: "Reliability",  glyph: "R" },
+      clar: { name: "Clarity",      glyph: "C" },
+      meet: { name: "Meetings",     glyph: "M" },
+      surp: { name: "No surprises", glyph: "N" },
+      time: { name: "Time",         glyph: "T" },
+    },
+
+    ranks: { rookie: "Rookie", reliable: "Reliable", trusted: "Trusted", favorite: "Client favorite", author: "Playbook author" },
+
+    badges: {
+      "one-name": { title: "One name per ask",
+        rule: "Address every request to one person, two at most. Everyone else goes on CC.",
+        why: "When a request goes to a group, each person assumes someone else will pick it up. Putting a name on it removes the guesswork.",
+        good: "\"Dana, can you approve the homepage copy by Thursday? Leo, FYI.\"",
+        bad: "\"Hi team, can someone take a look when you get a chance?\"" },
+      "names-tasks": { title: "Names next to tasks",
+        rule: "If several people need to act, list each name beside their task and date.",
+        why: "A shared to-do list with no names reads as optional. A list with names reads as a plan.",
+        good: "\"Dana: approve copy (Thu). Leo: send logo files (Wed).\"",
+        bad: "\"Action items: approve copy, send logos.\"" },
+      "close-loop": { title: "Close the loop",
+        rule: "Every thread ends in a clear state: done, decided, or parked with a date.",
+        why: "Open threads make clients wonder whether anything happened. A one-line close-out saves a follow-up email.",
+        good: "\"Closing this out: the fix shipped Tuesday and Dana confirmed it works.\"",
+        bad: "Fixing it quietly and never replying to the thread." },
+      "handoff": { title: "Hand off out loud",
+        rule: "Before time off or a reassignment, tell the client who covers, from when, and how to reach them.",
+        why: "Clients shouldn't discover your absence by getting no reply.",
+        good: "\"I'm out Fri–Mon. Sam has the project and is copied here.\"",
+        bad: "An auto-reply the client sees on Friday afternoon." },
+      "reachable": { title: "Reachable when you said",
+        rule: "Keep the hours you committed to, and acknowledge messages quickly even when the full answer takes longer.",
+        why: "A fast \"got it\" with a date tells the client the request landed and when to expect more.",
+        good: "\"Got it. I'll have an answer by Thursday noon.\"",
+        bad: "Waiting two days to reply until you have the perfect answer." },
+      "alarms": { title: "Alarms are set",
+        rule: "Every client meeting gets a calendar invite plus an alarm. Join a couple of minutes early.",
+        why: "Being late once costs more trust than being early a hundred times earns.",
+        good: "Invite accepted, phone alarm 10 minutes before, link open early.",
+        bad: "Relying on remembering, then joining at :04." },
+      "dates": { title: "Dates, not \"soon\"",
+        rule: "Give a date for everything you promise. If it will slip, say so before it passes, with a new date.",
+        why: "\"Soon\" means a different day to every reader. A date can be planned around.",
+        good: "\"Mockups by Tuesday EOD.\"",
+        bad: "\"Should have something soon.\"" },
+      "fuzzy": { title: "Name the fuzzy part",
+        rule: "When a request can be read two ways, say both, pick a default, and set a deadline to object.",
+        why: "Spotting ambiguity is cheap at the start and expensive after the work is built.",
+        good: "\"I read 'export' as a CSV of this month's orders. If you meant all history, tell me by Wed; otherwise I'll go with CSV.\"",
+        bad: "Guessing silently and building the wrong thing." },
+      "play-back": { title: "Play it back",
+        rule: "Before big work starts, restate the request in your own words and get a yes.",
+        why: "It costs one email and catches most misunderstandings.",
+        good: "\"To confirm: a booking page, mobile first, launches with two services. Right?\"",
+        bad: "Starting from a two-line message in chat." },
+      "done": { title: "Agree on \"done\"",
+        rule: "Write down what done looks like before you start: what it does, where it runs, who signs off.",
+        why: "Without it, \"done\" becomes a negotiation at the end.",
+        good: "\"Done = works on staging, Dana tests checkout, then we ship.\"",
+        bad: "\"I'll let you know when it's done.\"" },
+      "forwardable": { title: "Write it to be forwarded",
+        rule: "Assume any email may be forwarded to the client's boss. It should make sense and read well on its own.",
+        why: "Clients share our updates internally. Clear, kind, self-contained writing makes them look good too.",
+        good: "Short subject, context in line one, the ask in bold, no inside jokes.",
+        bad: "\"see above lol, same issue as before\"" },
+      "agenda": { title: "Agenda goes first",
+        rule: "Send an agenda before every meeting, with the decision you need called out.",
+        why: "People come prepared, and the meeting has a finish line.",
+        good: "Items added through Muse Hours (\"add this to the agenda\") and shared a day ahead.",
+        bad: "\"Let's just catch up.\"" },
+      "recap": { title: "Recap before you hang up",
+        rule: "Use the last five minutes to recap who does what by when, out loud.",
+        why: "Everyone leaves with the same list, and mismatches surface while everyone is still in the room.",
+        good: "\"Before we go: Sam sends mockups Tue, you confirm pricing Wed, next call Fri 10am.\"",
+        bad: "\"Great call, talk soon!\"" },
+      "notes": { title: "Notes the same day",
+        rule: "Reread your notes, then send them the same day: decisions, next steps with names and dates, open questions.",
+        why: "Notes are the official record. Rereading catches wrong names, dates, and tone before the client does.",
+        good: "Sent by 5pm, one named owner per action, typos fixed.",
+        bad: "Notes sent three days later, or never." },
+      "bad-news": { title: "Bad news travels first",
+        rule: "The moment you think a date is at risk, tell the client: what happened, the impact, options, and your recommendation.",
+        why: "Early warning gives the client choices. Late warning only gives them a problem.",
+        good: "Wednesday: \"Friday is at risk. Options: ship A Friday and B Tuesday, or all of it Monday. I'd do the first.\"",
+        bad: "Friday at 5pm: \"Didn't quite make it.\"" },
+      "prove-it": { title: "Prove it's done",
+        rule: "Test it yourself before saying it's done, and show it: a screenshot, a short video, a link.",
+        why: "\"Should work\" asks the client to do our QA.",
+        good: "\"Live now. I tested checkout with a 3-item cart; screenshot attached.\"",
+        bad: "\"Pushed the fix, should be working.\"" },
+      "easy-yes": { title: "Easy to say yes",
+        rule: "Every ask includes the context, the options, and your recommended default. Put the action and deadline in the subject; lead the body with your recommendation.",
+        why: "A decision that takes 30 seconds gets made today. One that needs research waits a week. The subject tells them something is waiting and when; the first line tells them what you'd do.",
+        good: "Subject: \"Decision needed by Fri: launch date\". Body opens: \"I recommend Nov 3. It gives QA a full week.\"",
+        bad: "Subject: \"Question\", with the ask buried in paragraph three." },
+      "log-fresh": { title: "Log it while it's fresh",
+        rule: "Log time in Muse Hours at least daily, ideally after each work block. In Claude Code or Cursor, just ask it to log the session.",
+        why: "Memory fades within a day. Fresh logs make invoices accurate, and accurate invoices keep trust.",
+        good: "Logged at the end of each block, with a real task.",
+        bad: "Rebuilding two weeks from memory the night before payroll." },
+      "readable-log": { title: "Descriptions a client can read",
+        rule: "Write time entries as if the client will read them, because on an invoice they do.",
+        why: "A clear line item answers \"what did we pay for?\" before anyone asks.",
+        good: "\"Fixed tax rounding on checkout; added test\"",
+        bad: "\"misc\" or \"stuff\"" },
+    },
+
+    quiz: {
+      "group-ask": { s: "Five people need to review the launch checklist before Thursday.",
+        a: "\"Hi all, please review the checklist when you get a chance.\"",
+        b: "\"Dana: sections 1–2 by Thursday. Leo: sections 3–4 by Thursday. Everyone else, FYI.\"",
+        why: "One name per task. A group request lets everyone assume someone else has it." },
+      "reporting": { s: "A client writes: \"Can we add reporting?\"",
+        a: "\"Quick check: do you mean a CSV export or a live dashboard? I'll start on the CSV Monday unless you say otherwise.\"",
+        b: "\"Sure, on it!\"",
+        why: "Name the fuzzy part, pick a default, and give them a window to redirect." },
+      "slip": { s: "It's Wednesday. You can see Friday's deliverable is going to slip.",
+        a: "Push hard, and tell them Friday afternoon if it doesn't make it.",
+        b: "Tell them today: what happened, the impact, two options, and which one you recommend.",
+        why: "Bad news early is a plan. Bad news late is a problem." },
+      "wrap": { s: "The meeting is wrapping up with five minutes left.",
+        a: "\"Before we go: Sam sends mockups Tuesday, you confirm pricing Wednesday, next call Friday at 10. Notes in your inbox today.\"",
+        b: "\"Great call, everyone. Talk soon!\"",
+        why: "Recap who does what by when while everyone is still listening, then send notes the same day." },
+      "deploy": { s: "You just deployed a bug fix the client reported.",
+        a: "\"Pushed the fix, should be working now.\"",
+        b: "\"Live now. I tested checkout with a 3-item cart and attached a screenshot.\"",
+        why: "Prove it's done. \"Should work\" hands QA back to the client." },
+      "hours": { s: "It's 6pm Thursday and you haven't logged any time this week.",
+        a: "Log today's blocks in Muse Hours now, then rebuild Mon–Wed from your calendar while it's still fresh.",
+        b: "Catch up at the end of the month when things calm down.",
+        why: "Payroll windows float. Fresh logs are accurate logs, and accurate logs become accurate invoices." },
+    },
+
+    phases: {
+      before: { title: "Before", items: {
+        "agenda":   ["Agenda sent", "Add items in Muse Hours with \"add this to the agenda\", then share it."],
+        "alarm":    ["Invite + alarm set", "Calendar invite accepted and a phone alarm 10 minutes before."],
+        "decision": ["Know your one decision", "What must be decided for this meeting to count?"],
+        "prereads": ["Pre-reads linked", "Anything people need to review is linked in the invite."],
+      }},
+      during: { title: "During", items: {
+        "on-time":   ["Start on time", "Join a couple of minutes early."],
+        "decisions": ["Capture decisions live", "Write each decision and owner as it happens."],
+        "fuzzy":     ["Name the fuzzy parts", "Say ambiguities out loud and agree on a default."],
+        "recap":     ["Recap who, what, by when", "Last five minutes, out loud, every time."],
+      }},
+      after: { title: "After", items: {
+        "reread":    ["Reread the notes", "Check names, dates, numbers, and tone."],
+        "send":      ["Send notes the same day", "One named owner per action item."],
+        "log":       ["Log the meeting time", "In Muse Hours, with a client-readable description."],
+        "followups": ["Follow-ups on the calendar", "Your own due dates get alarms too."],
+      }},
+    },
+
+    dailySteps: [
+      "Log today's time in Muse Hours, with descriptions a client could read.",
+      "Reply to anything waiting on you, even if it's \"answer by Thursday.\"",
+      "Set tomorrow's alarms for meetings and due dates.",
+    ],
+
+    notesTemplate: `Subject: Notes + next steps: [Project], [Date]
+
+Hi [One name],
+
+Thanks for today. Here's what we agreed.
+
+Decisions
+- [Decision]
+
+Next steps
+- [Name]: [task] by [date]
+- [Name]: [task] by [date]
+
+Open questions
+- [Question] (owner: [Name], answer by [date])
+
+Next meeting: [day, date, time]`,
+  },
+
+  uk: {
+    meta: {
+      name: "Українська", dateLocale: "uk-UA", weekStartsOn: 1,
+      // Bricolage Grotesque and Atkinson Hyperlegible have no Cyrillic; Onest does.
+      fonts: {
+        href: "https://fonts.googleapis.com/css2?family=Onest:wght@400;700;800&display=swap",
+        display: "\"Onest\", \"Segoe UI\", system-ui, sans-serif",
+        body: "\"Onest\", \"Segoe UI\", system-ui, sans-serif",
+      },
+    },
+
+    ui: {
+      "nav.label": "Розділи",
+      "nav.brand": "Плейбук CX",
+      "nav.badges": "Значки",
+      "nav.quiz": "Що б ви надіслали?",
+      "nav.meetings": "Чек-лист зустрічі",
+      "nav.time": "Час і зарплата",
+      "nav.language": "Мова",
+
+      "hero.eyebrow": "Внутрішній посібник · PM і розробники",
+      "hero.title": "Плейбук клієнтського досвіду",
+      "hero.lede": "Маленькі звички, завдяки яким клієнти відчувають турботу. Прочитайте значок, перегляньте приклад і заберіть його, коли так уже працюєте.",
+
+      "meter.label": "Отримані значки",
+      "meter.of": { one: "з {total} значка", few: "з {total} значків", many: "з {total} значків", other: "з {total} значка" },
+      "meter.privacy": "Ваш прогрес бачите лише ви.",
+
+      "tour.dialogLabel": "Покроковий плейбук",
+      "tour.start": "Почати плейбук",
+      "tour.startNote": "Близько 10 хвилин, одна звичка за раз. Зупиніться будь-коли й продовжте з того самого місця.",
+      "tour.continue": "Продовжити: крок {n} з {total}",
+      "tour.restart": "Почати знову",
+      "tour.again": "Пройти ще раз",
+      "tour.finishedNote": { one: "Завершено. Отримано {n} значок.", few: "Завершено. Отримано {n} значки.", many: "Завершено. Отримано {n} значків.", other: "Завершено. Отримано {n} значка." },
+      "tour.savedAccount": "Прогрес зберігається у вашому акаунті, тож він доступний на будь-якому пристрої.",
+      "tour.savedLocal": "Прогрес зберігається в цьому браузері.",
+      "tour.exit": "Зберегти й вийти",
+      "tour.back": "Назад",
+      "tour.next": "Далі",
+      "tour.step": "Крок {n} з {total}",
+      "tour.sec.start": "Основи",
+      "tour.sec.badges": "Звички",
+      "tour.sec.quiz": "Тест",
+      "tour.sec.meetings": "Зустрічі",
+      "tour.sec.time": "Час",
+      "tour.sec.finish": "Фініш",
+      "tour.introTitle": "Ласкаво просимо до плейбука",
+      "tour.introBody": "Ви по черзі пройдете {badges} звичок, розберете {quiz} коротких ситуацій, а наприкінці — зустрічі й облік часу. Для кожної звички позначте, чи ви вже так працюєте, чи хочете це потренувати.",
+      "tour.principlesTitle": "Чотири ідеї, на яких тримається кожна звичка",
+      "tour.doThis": "★ Я вже так роблю",
+      "tour.workOn": "Попрацюю над цим",
+      "tour.isClaimed": "Ви вже отримали цей значок.",
+      "tour.isLater": "У вашому списку для практики.",
+      "tour.meetingTitle": "Кожна зустріч має три етапи",
+      "tour.meetingBody": "Повний чек-лист і шаблон нотаток є на головній сторінці. Користуйтеся ними перед кожною зустріччю з клієнтом.",
+      "tour.payTitle": "Записуйте час щодня",
+      "tour.payBody": "Зарплату нараховують у перший і третій тиждень місяця, плюс-мінус кілька днів. З цим запасом {pct} цього місяця може виявитися дедлайном, тож безпечного дня, щоб відкласти облік, немає.",
+      "tour.finishTitle": "Ви пройшли плейбук",
+      "tour.finishClaimed": "Ви отримали {n} з {total} значків.",
+      "tour.finishQuiz": "Результат тесту: {score} з {total}.",
+      "tour.finishPractice": "Ваш список для практики",
+      "tour.finishNone": "У вашому списку для практики нічого немає.",
+      "tour.close": "Повернутися на сторінку",
+
+      "principles.label": "Базові принципи",
+
+      "badges.eyebrow": "Значки",
+      "badges.title": "Шість груп, одна ідея: нам легко довіряти",
+      "badges.filterLabel": "Фільтр значків",
+      "badges.all": "Усі значки",
+      "badges.details": "Чому це важливо + приклад",
+      "badges.do": "Робіть так",
+      "badges.instead": "Замість",
+      "badges.claim": "☆ Я так роблю",
+      "badges.claimed": "★ Отримано",
+      "badges.toastClaimed": "Значок отримано: {title}",
+
+      "quiz.eyebrow": "Вправа 1",
+      "quiz.title": "Що б ви надіслали?",
+      "quiz.lede": "Реальні ситуації, дві відповіді. Оберіть ту, після якої клієнт відчує, що все під контролем.",
+      "quiz.progress": "Ситуація {n} з {total}",
+      "quiz.option": "Варіант {letter}",
+      "quiz.letter.a": "А",
+      "quiz.letter.b": "Б",
+      "quiz.right": "Чудово.",
+      "quiz.wrong": "Не зовсім.",
+      "quiz.next": "Наступна ситуація",
+      "quiz.seeScore": "Побачити результат",
+      "quiz.done": "Готово",
+      "quiz.score": "{score} з {total}.",
+      "quiz.perfect": "Ідеально. Час забирати значки.",
+      "quiz.good": "Добре. Перегляньте вище ті, де помилилися.",
+      "quiz.retry": "Варто ще раз пройтися по значках.",
+      "quiz.again": "Пройти ще раз",
+
+      "meet.eyebrow": "Вправа 2",
+      "meet.title": "Передпольотна перевірка зустрічі",
+      "meet.lede": "Проходьте її як чек-лист перед вильотом. Відмічайте пункти по ходу й скидайте перед наступною зустріччю.",
+      "meet.count": "Відмічено {n} з {total}",
+      "meet.allClear": "Усе відмічено. Гарна зустріч.",
+      "meet.reset": "Скинути для наступної зустрічі",
+      "meet.toastReset": "Готово до наступної зустрічі",
+      "meet.templateTitle": "Шаблон листа з нотатками",
+      "meet.copy": "Скопіювати шаблон",
+      "meet.copied": "Шаблон скопійовано",
+      "meet.selected": "Виділено. Натисніть Ctrl+C, щоб скопіювати",
+
+      "pay.eyebrow": "Вправа 3",
+      "pay.title": "Чому «записуй щодня» — єдине безпечне правило",
+      "pay.lede": "Зарплату нараховують у перший і третій тиждень місяця, плюс-мінус кілька днів. Посуньте повзунок запасу й подивіться, яка частина місяця може виявитися дедлайном.",
+      "pay.prevMonth": "Попередній місяць",
+      "pay.nextMonth": "Наступний місяць",
+      "pay.legendCore": "Тиждень виплат (1-й, 3-й)",
+      "pay.legendWiggle": "Теж може бути дедлайном",
+      "pay.legendToday": "Сьогодні",
+      "pay.wiggleLabel": "Запас",
+      "pay.wiggleNone": "Немає",
+      "pay.wiggleDays": { one: "±{n} день", few: "±{n} дні", many: "±{n} днів", other: "±{n} дня" },
+      "pay.noteHigh": "Із запасом ±{w} дн. {covered} з {dim} днів цього місяця можуть припасти на вікно виплат. Безпечного дня, щоб відставати, немає.",
+      "pay.noteLow": "днів цього місяця припадає на вікно виплат або поруч із ним. Реальні дедлайни зміщуються сильніше, тож усе одно записуйте щодня.",
+
+      "daily.title": "Щоденне завершення (5 хвилин)",
+
+      "footer.note": "Внутрішній довідник. У прикладах вигадані імена.",
+      "footer.reset": "Скинути мої значки",
+      "footer.toastReset": "Значки скинуто",
+    },
+
+    principles: [
+      { title: "Клієнти купують упевненість", body: "Вони хочуть знати, що все під контролем, і не перевіряти це самі." },
+      { title: "Сюрпризи коштують довіри", body: "Погана новина вчасно — це план. Погана новина запізно — це проблема." },
+      { title: "Їхній час — це бюджет", body: "Кожне нечітке прохання чи затягнута зустріч його витрачає." },
+      { title: "Записане краще за запам'ятоване", body: "Якщо це не записано й не надіслано, цього не було." },
+    ],
+
+    pillars: {
+      own:  { name: "Відповідальність", glyph: "В" },
+      rel:  { name: "Надійність",       glyph: "Н" },
+      clar: { name: "Ясність",          glyph: "Я" },
+      meet: { name: "Зустрічі",         glyph: "З" },
+      surp: { name: "Без сюрпризів",    glyph: "Б" },
+      time: { name: "Час",              glyph: "Ч" },
+    },
+
+    ranks: { rookie: "Новачок", reliable: "Надійний", trusted: "Перевірений", favorite: "Улюбленець клієнтів", author: "Автор плейбука" },
+
+    badges: {
+      "one-name": { title: "Одне ім'я на запит",
+        rule: "Адресуйте кожен запит одній людині, максимум двом. Усіх інших — у копію.",
+        why: "Коли запит надсилають групі, кожен думає, що за нього візьметься хтось інший. Конкретне ім'я прибирає здогадки.",
+        good: "«Дано, можеш затвердити текст головної сторінки до четверга? Лео, для інформації.»",
+        bad: "«Усім привіт, хтось може глянути, коли буде час?»" },
+      "names-tasks": { title: "Імена біля завдань",
+        rule: "Якщо діяти мають кілька людей, вкажіть ім'я кожного біля його завдання й дати.",
+        why: "Спільний список без імен сприймається як необов'язковий. Список з іменами — як план.",
+        good: "«Дана: затвердити текст (чт). Лео: надіслати файли логотипа (ср).»",
+        bad: "«Що зробити: затвердити текст, надіслати логотипи.»" },
+      "close-loop": { title: "Закривайте петлю",
+        rule: "Кожна гілка листування завершується чітким станом: зроблено, вирішено або відкладено з датою.",
+        why: "Відкриті гілки змушують клієнта гадати, чи щось відбулося. Один рядок-підсумок економить ще один лист.",
+        good: "«Закриваю питання: виправлення вийшло у вівторок, Дана підтвердила, що все працює.»",
+        bad: "Тихо все виправити й так і не відповісти в гілці." },
+      "handoff": { title: "Передавайте справи вголос",
+        rule: "Перед відпусткою чи зміною проєкту скажіть клієнту, хто вас замінює, з якого числа і як із ним зв'язатися.",
+        why: "Клієнт не має дізнаватися про вашу відсутність через те, що йому ніхто не відповідає.",
+        good: "«Мене не буде з пт по пн. Проєкт веде Сем, він у копії.»",
+        bad: "Автовідповідь, яку клієнт побачить у п'ятницю по обіді." },
+      "reachable": { title: "На зв'язку, як і обіцяли",
+        rule: "Дотримуйтеся годин, які пообіцяли, і швидко підтверджуйте отримання повідомлень, навіть якщо повна відповідь займе більше часу.",
+        why: "Швидке «прийнято» з датою показує клієнту, що запит дійшов і коли чекати продовження.",
+        good: "«Прийнято. Відповім до четверга, 12:00.»",
+        bad: "Два дні мовчати, доки не з'явиться ідеальна відповідь." },
+      "alarms": { title: "Нагадування встановлено",
+        rule: "Для кожної зустрічі з клієнтом — запрошення в календарі плюс будильник. Підключайтеся на пару хвилин раніше.",
+        why: "Одне запізнення забирає більше довіри, ніж сто вчасних підключень її додають.",
+        good: "Запрошення прийнято, будильник на телефоні за 10 хвилин, посилання відкрито заздалегідь.",
+        bad: "Покладатися на пам'ять і підключитися о :04." },
+      "dates": { title: "Дати, а не «скоро»",
+        rule: "Називайте дату для всього, що обіцяєте. Якщо термін зривається, скажіть про це до його настання й назвіть нову дату.",
+        why: "«Скоро» для кожного означає інший день. Під дату можна планувати.",
+        good: "«Макети до кінця дня у вівторок.»",
+        bad: "«Скоро щось буде.»" },
+      "fuzzy": { title: "Назвіть незрозуміле",
+        rule: "Якщо запит можна прочитати двояко, назвіть обидва варіанти, оберіть варіант за замовчуванням і дайте час заперечити.",
+        why: "Помітити неоднозначність на старті дешево, а коли роботу вже зроблено — дорого.",
+        good: "«Я розумію „експорт“ як CSV із замовленнями за цей місяць. Якщо мали на увазі всю історію, напишіть до середи; інакше роблю CSV.»",
+        bad: "Мовчки вгадати й зробити не те." },
+      "play-back": { title: "Перекажіть своїми словами",
+        rule: "Перед великою роботою перекажіть запит своїми словами й отримайте «так».",
+        why: "Це коштує одного листа й відсікає більшість непорозумінь.",
+        good: "«Уточню: сторінка бронювання, спершу мобільна версія, на старті дві послуги. Правильно?»",
+        bad: "Починати роботу з повідомлення у два рядки в чаті." },
+      "done": { title: "Домовтеся, що таке «готово»",
+        rule: "Перед стартом запишіть, як виглядає результат: що він робить, де працює, хто приймає.",
+        why: "Без цього «готово» перетворюється на переговори наприкінці.",
+        good: "«Готово = працює на staging, Дана перевіряє оформлення замовлення, потім випускаємо.»",
+        bad: "«Дам знати, коли буде готово.»" },
+      "forwardable": { title: "Пишіть так, щоб лист можна було переслати",
+        rule: "Вважайте, що будь-який лист можуть переслати керівнику клієнта. Він має бути зрозумілим і добре читатися сам по собі.",
+        why: "Клієнти діляться нашими оновленнями всередині компанії. Чіткий, доброзичливий і самодостатній текст допомагає й їм виглядати добре.",
+        good: "Коротка тема, контекст у першому рядку, прохання виділене жирним, жодних внутрішніх жартів.",
+        bad: "«див. вище лол, та сама проблема»" },
+      "agenda": { title: "Спершу порядок денний",
+        rule: "Надсилайте порядок денний перед кожною зустріччю й окремо вказуйте рішення, яке потрібне.",
+        why: "Люди приходять підготовленими, а зустріч має чітку фінішну пряму.",
+        good: "Пункти додано через Muse Hours («додай це до порядку денного») і надіслано за день.",
+        bad: "«Давайте просто синхронізуємося.»" },
+      "recap": { title: "Підсумок перед завершенням",
+        rule: "Останні п'ять хвилин уголос підсумовуйте, хто що робить і до коли.",
+        why: "Усі йдуть з однаковим списком, а розбіжності спливають, поки всі ще на зв'язку.",
+        good: "«Перед тим як завершити: Сем надсилає макети у вт, ви підтверджуєте ціни в ср, наступний дзвінок у пт о 10:00.»",
+        bad: "«Чудовий дзвінок, до зв'язку!»" },
+      "notes": { title: "Нотатки того ж дня",
+        rule: "Перечитайте нотатки й надішліть їх того ж дня: рішення, наступні кроки з іменами й датами, відкриті питання.",
+        why: "Нотатки — це офіційний запис. Перечитування ловить неправильні імена, дати й тон раніше, ніж це помітить клієнт.",
+        good: "Надіслано до 17:00, одна відповідальна людина на кожну дію, одруківки виправлено.",
+        bad: "Нотатки через три дні або взагалі ніколи." },
+      "bad-news": { title: "Погані новини — першими",
+        rule: "Щойно ви бачите, що термін під загрозою, скажіть клієнту: що сталося, на що це впливає, які є варіанти і що ви радите.",
+        why: "Раннє попередження дає клієнту вибір. Пізнє дає лише проблему.",
+        good: "Середа: «П'ятниця під загрозою. Варіанти: A в п'ятницю, B у вівторок, або все разом у понеділок. Раджу перший.»",
+        bad: "П'ятниця, 17:00: «Трохи не встигли.»" },
+      "prove-it": { title: "Доведіть, що готово",
+        rule: "Перевірте самі, перш ніж казати «готово», і покажіть: скриншот, коротке відео, посилання.",
+        why: "«Має працювати» перекладає наше тестування на клієнта.",
+        good: "«Уже на продакшні. Перевірено оформлення замовлення з кошиком на 3 товари, скриншот додаю.»",
+        bad: "«Залив фікс, має працювати.»" },
+      "easy-yes": { title: "Легко сказати «так»",
+        rule: "Кожен запит містить контекст, варіанти й ваш рекомендований варіант. У темі — дія і дедлайн, а лист починайте з рекомендації.",
+        why: "Рішення, яке займає 30 секунд, ухвалюють сьогодні. Рішення, що потребує дослідження, чекає тиждень. Тема каже, що щось чекає і до коли; перший рядок — що зробили б ви.",
+        good: "Тема: «Потрібне рішення до пт: дата запуску». Лист починається: «Раджу 3 листопада. Так у QA буде цілий тиждень.»",
+        bad: "Тема: «Питання», а саме прохання сховане в третьому абзаці." },
+      "log-fresh": { title: "Записуйте, поки свіже",
+        rule: "Записуйте час у Muse Hours щонайменше щодня, а краще після кожного блоку роботи. У Claude Code чи Cursor просто попросіть записати сесію.",
+        why: "Пам'ять тьмяніє за день. Свіжі записи роблять рахунки точними, а точні рахунки зберігають довіру.",
+        good: "Записано наприкінці кожного блоку, з реальним завданням.",
+        bad: "Відновлювати два тижні з пам'яті напередодні зарплати." },
+      "readable-log": { title: "Описи, зрозумілі клієнту",
+        rule: "Пишіть записи часу так, ніби їх читатиме клієнт, бо в рахунку він їх і читає.",
+        why: "Чіткий рядок у рахунку відповідає на «за що ми заплатили?» ще до того, як хтось спитає.",
+        good: "«Виправлено округлення податку в оформленні замовлення; додано тест»",
+        bad: "«різне» або «всяке»" },
+    },
+
+    quiz: {
+      "group-ask": { s: "П'ятеро людей мають переглянути чек-лист запуску до четверга.",
+        a: "«Усім привіт, перегляньте, будь ласка, чек-лист, коли буде час.»",
+        b: "«Дано: розділи 1–2 до четверга. Лео: розділи 3–4 до четверга. Решті — для інформації.»",
+        why: "Одне ім'я на завдання. Груповий запит дає кожному підстави думати, що ним займається хтось інший." },
+      "reporting": { s: "Клієнт пише: «Можна додати звітність?»",
+        a: "«Швидке уточнення: ви маєте на увазі експорт у CSV чи живий дашборд? Почну з CSV у понеділок, якщо не скажете інакше.»",
+        b: "«Звісно, вже роблю!»",
+        why: "Назвіть незрозуміле, оберіть варіант за замовчуванням і дайте час змінити курс." },
+      "slip": { s: "Середа. Ви бачите, що здача в п'ятницю зривається.",
+        a: "Викластися на повну й сказати в п'ятницю по обіді, якщо не встигнете.",
+        b: "Сказати сьогодні: що сталося, на що це впливає, два варіанти і який ви радите.",
+        why: "Погана новина вчасно — це план. Погана новина запізно — це проблема." },
+      "wrap": { s: "Зустріч добігає кінця, лишилося п'ять хвилин.",
+        a: "«Перед тим як завершити: Сем надсилає макети у вівторок, ви підтверджуєте ціни в середу, наступний дзвінок у п'ятницю о 10:00. Нотатки будуть у вашій пошті сьогодні.»",
+        b: "«Чудовий дзвінок, усім дякую. До зв'язку!»",
+        why: "Підсумуйте, хто що робить і до коли, поки всі ще слухають, а потім надішліть нотатки того ж дня." },
+      "deploy": { s: "Ви щойно випустили виправлення бага, про який повідомив клієнт.",
+        a: "«Залив фікс, тепер має працювати.»",
+        b: "«Уже на продакшні. Перевірено оформлення замовлення з кошиком на 3 товари, скриншот додаю.»",
+        why: "Доведіть, що готово. «Має працювати» повертає тестування клієнту." },
+      "hours": { s: "Четвер, 18:00, а ви цього тижня ще нічого не записали.",
+        a: "Записати сьогоднішні блоки в Muse Hours зараз, а пн–ср відновити з календаря, поки все свіже.",
+        b: "Надолужити наприкінці місяця, коли стане спокійніше.",
+        why: "Вікна виплат плавають. Свіжі записи — точні записи, а точні записи стають точними рахунками." },
+    },
+
+    phases: {
+      before: { title: "До", items: {
+        "agenda":   ["Порядок денний надіслано", "Додайте пункти в Muse Hours фразою «додай це до порядку денного» і поділіться ним."],
+        "alarm":    ["Запрошення й будильник", "Запрошення в календарі прийнято, будильник на телефоні за 10 хвилин."],
+        "decision": ["Знайте своє одне рішення", "Що має бути вирішено, щоб зустріч вважалася вдалою?"],
+        "prereads": ["Матеріали додано", "Усе, що люди мають переглянути, є посиланням у запрошенні."],
+      }},
+      during: { title: "Під час", items: {
+        "on-time":   ["Почніть вчасно", "Підключайтеся на пару хвилин раніше."],
+        "decisions": ["Фіксуйте рішення одразу", "Записуйте кожне рішення й відповідального, щойно воно з'являється."],
+        "fuzzy":     ["Називайте незрозуміле", "Проговорюйте неоднозначності вголос і домовляйтеся про варіант за замовчуванням."],
+        "recap":     ["Підсумок: хто, що, до коли", "Останні п'ять хвилин, уголос, щоразу."],
+      }},
+      after: { title: "Після", items: {
+        "reread":    ["Перечитайте нотатки", "Перевірте імена, дати, числа й тон."],
+        "send":      ["Надішліть нотатки того ж дня", "Одна відповідальна людина на кожен пункт дій."],
+        "log":       ["Запишіть час зустрічі", "У Muse Hours, з описом, зрозумілим клієнту."],
+        "followups": ["Подальші кроки в календарі", "Ваші власні дедлайни теж отримують нагадування."],
+      }},
+    },
+
+    dailySteps: [
+      "Запишіть сьогоднішній час у Muse Hours з описами, зрозумілими клієнту.",
+      "Дайте відповідь на все, що чекає на вас, навіть якщо це «відповім до четверга».",
+      "Поставте нагадування на завтра для зустрічей і дедлайнів.",
+    ],
+
+    notesTemplate: `Тема: Нотатки та наступні кроки: [Проєкт], [Дата]
+
+Вітаю, [Одне ім'я]!
+
+Дякую за сьогоднішню зустріч. Ось про що ми домовилися.
+
+Рішення
+- [Рішення]
+
+Наступні кроки
+- [Ім'я]: [завдання] до [дата]
+- [Ім'я]: [завдання] до [дата]
+
+Відкриті питання
+- [Питання] (відповідальний: [Ім'я], відповідь до [дата])
+
+Наступна зустріч: [день, дата, час]`,
+  },
+};
+
+/* =====================================================================
+   STRUCTURE — language-independent. Order, grouping, answers and colors.
+   Translators never need to touch this.
+   ===================================================================== */
+const PILLAR_ORDER = [
+  { id: "own",  color: "var(--p-own)" },
+  { id: "rel",  color: "var(--p-rel)" },
+  { id: "clar", color: "var(--p-clar)" },
+  { id: "meet", color: "var(--p-meet)" },
+  { id: "surp", color: "var(--p-surp)" },
+  { id: "time", color: "var(--p-time)" },
+];
+const BADGE_ORDER = [
+  ["one-name", "own"], ["names-tasks", "own"], ["close-loop", "own"], ["handoff", "own"],
+  ["reachable", "rel"], ["alarms", "rel"], ["dates", "rel"],
+  ["fuzzy", "clar"], ["play-back", "clar"], ["done", "clar"], ["forwardable", "clar"],
+  ["agenda", "meet"], ["recap", "meet"], ["notes", "meet"],
+  ["bad-news", "surp"], ["prove-it", "surp"], ["easy-yes", "surp"],
+  ["log-fresh", "time"], ["readable-log", "time"],
+].map(([id, p]) => ({ id, p }));
+const QUIZ_ORDER = [
+  { id: "group-ask", ok: "b" }, { id: "reporting", ok: "a" }, { id: "slip", ok: "b" },
+  { id: "wrap", ok: "a" }, { id: "deploy", ok: "b" }, { id: "hours", ok: "a" },
+];
+const PHASE_ORDER = [
+  { id: "before", items: ["agenda", "alarm", "decision", "prereads"] },
+  { id: "during", items: ["on-time", "decisions", "fuzzy", "recap"] },
+  { id: "after",  items: ["reread", "send", "log", "followups"] },
+];
+const RANKS = [[0, "rookie"], [5, "reliable"], [10, "trusted"], [15, "favorite"], [BADGE_ORDER.length, "author"]];
+const PAYROLL_WEEKS = [[1, 7], [15, 21]]; // first and third week, by day of month
+
+/* =====================================================================
+   i18n engine
+   ===================================================================== */
+const FALLBACK = "en";
+const store = {
+  get(k, d) { try { const v = localStorage.getItem("cxp:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+  set(k, v) { try { localStorage.setItem("cxp:" + k, JSON.stringify(v)); } catch {} },
+};
+function pickLocale() {
+  const saved = store.get("progress", {}).lang || store.get("lang", null);
+  if (saved && LOCALES[saved]) return saved;
+  const nav = (navigator.languages || [navigator.language || ""]).map((l) => l.slice(0, 2).toLowerCase());
+  return nav.find((l) => LOCALES[l]) || FALLBACK;
+}
+let lang = pickLocale();
+const L = () => LOCALES[lang];
+const E = () => LOCALES[FALLBACK];
+
+/* Look up a path like "badges.one-name.title" in the active locale, then English. */
+function pick(path) {
+  const walk = (root) => path.split(".").reduce((o, k) => (o == null ? o : o[k]), root);
+  const v = walk(L());
+  return v == null ? walk(E()) : v;
+}
+/* UI string with {placeholders}; plural objects are resolved by vars.n via Intl.PluralRules. */
+function t(key, vars = {}) {
+  let s = L().ui?.[key] ?? E().ui[key];
+  if (s == null) { console.warn("Missing i18n key:", key); return key; }
+  if (typeof s === "object") {
+    const cat = new Intl.PluralRules(L().meta.dateLocale || lang).select(vars.n ?? 0);
+    s = s[cat] ?? s.other;
+  }
+  return s.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? `{${k}}`));
+}
+function applyStatic() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  document.querySelectorAll("[data-i18n-html]").forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
+  document.querySelectorAll("[data-i18n-attr]").forEach((el) => {
+    el.dataset.i18nAttr.split(";").forEach((pair) => {
+      const [attr, key] = pair.split(":").map((s) => s.trim());
+      if (attr && key) el.setAttribute(attr, t(key));
+    });
+  });
+  document.title = t("hero.title");
+  applyFonts();
+}
+function applyFonts() {
+  const f = L().meta.fonts, root = document.documentElement.style;
+  ["display", "body", "mono"].forEach((k) => (f && f[k] ? root.setProperty(`--font-${k}`, f[k]) : root.removeProperty(`--font-${k}`)));
+  if (f?.href && !document.querySelector(`link[data-font="${lang}"]`)) {
+    const link = document.createElement("link");
+    link.rel = "stylesheet"; link.href = f.href; link.dataset.font = lang;
+    document.head.appendChild(link);
+  }
+}
+function renderLangPicker() {
+  const sel = document.getElementById("lang"), codes = Object.keys(LOCALES);
+  sel.hidden = codes.length < 2; // appears automatically once a second locale exists
+  sel.innerHTML = codes.map((c) => `<option value="${c}"${c === lang ? " selected" : ""}>${LOCALES[c].meta.name}</option>`).join("");
+}
+document.getElementById("lang").addEventListener("change", (e) => { lang = e.target.value; save(); renderAll(); });
+
+/* =====================================================================
+   Page
+   ===================================================================== */
+const $ = (s) => document.querySelector(s);
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+function toast(msg) { const el = $("#toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(toast.h); toast.h = setTimeout(() => el.classList.remove("show"), 1800); }
+
+/* =====================================================================
+   Progress — one private document per person (db: data/users/<id>/progress),
+   mirrored to this browser so the page paints instantly and still works signed out.
+   Everything is keyed by stable ids, so it survives a language switch.
+   ===================================================================== */
+const BADGE_IDS = new Set(BADGE_ORDER.map((b) => b.id));
+const MEET_IDS = new Set(PHASE_ORDER.flatMap((p) => p.items.map((i) => `m-${p.id}-${i}`)));
+const QUIZ_IDS = new Set(QUIZ_ORDER.map((q) => q.id));
+const freshTour = () => ({ step: 0, started: false, finished: false, answers: {} });
+let earned = new Set(), later = new Set(), meetChecks = new Set(), tour = freshTour();
+
+function applyProgress(p) {
+  const ids = (list, valid) => new Set((Array.isArray(list) ? list : []).filter((v) => valid.has(v)));
+  earned = ids(p.earned, BADGE_IDS);
+  later = ids(p.later, BADGE_IDS);
+  meetChecks = ids(p.meet, MEET_IDS);
+  const tr = p.tour || {};
+  const answers = {};
+  Object.entries(tr.answers || {}).forEach(([k, v]) => { if (QUIZ_IDS.has(k) && (v === "a" || v === "b")) answers[k] = v; });
+  tour = { step: Number.isInteger(tr.step) ? tr.step : 0, started: !!tr.started, finished: !!tr.finished, answers };
+  if (p.lang && LOCALES[p.lang]) lang = p.lang;
+}
+function snapshot() {
+  return { v: 2, earned: [...earned], later: [...later], meet: [...meetChecks], tour, lang, updatedAt: new Date().toISOString() };
+}
+function hasProgress() { return earned.size || later.size || meetChecks.size || tour.started; }
+
+(function loadLocal() {
+  const cached = store.get("progress", null);
+  if (cached) return applyProgress(cached);
+  // v1 kept English titles in "earned" and checkbox ids in "meet"
+  const v1 = store.get("earned", []).map((v) => BADGE_IDS.has(v) ? v : (BADGE_ORDER.find((b) => E().badges[b.id].title === v) || {}).id);
+  applyProgress({ earned: v1, meet: store.get("meet", []).map((id) => id.replace(/^m-(\d)-(\d)$/, (_, p, i) => `m-${PHASE_ORDER[p].id}-${PHASE_ORDER[p].items[i]}`)) });
+})();
+
+const sync = { mode: "local", ref: null, timer: 0, writing: false, dirty: false, retried: false };
+function save() {
+  store.set("progress", snapshot());
+  if (!sync.ref) return;
+  clearTimeout(sync.timer);
+  sync.timer = setTimeout(flush, 600); // coalesce bursts of clicks into one write
+}
+async function flush() {
+  if (!sync.ref) return;
+  if (sync.writing) { sync.dirty = true; return; }
+  sync.writing = true;
+  try { await sync.ref.set(snapshot()); sync.retried = false; }
+  catch (e) {
+    if (e && e.code === "unavailable" && !sync.retried) { sync.retried = true; sync.dirty = true; await new Promise((r) => setTimeout(r, 800 + Math.random() * 1200)); }
+    else { sync.ref = null; sync.mode = "local"; renderCta(); } // view-only or revoked: keep going in this browser
+  } finally {
+    sync.writing = false;
+    if (sync.dirty && sync.ref) { sync.dirty = false; flush(); }
+  }
+}
+async function connectAccount() {
+  if (!window.claude || !window.claude.use) return;
+  const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+  if (!db || !user) return;
+  const uid = await user.id();
+  if (!uid) return;
+  const ref = db.doc(`data/users/${uid}/progress`);
+  let snap;
+  try { snap = await ref.get(); } catch { return; }
+  sync.ref = ref; sync.mode = "account";
+  if (snap.exists) { applyProgress(snap.data()); store.set("progress", snapshot()); renderAll(); }
+  else { renderCta(); if (hasProgress()) flush(); } // first visit on this account: carry over browser progress
+}
+
+let filter = "all";
+
+function renderPrinciples() {
+  const list = pick("principles");
+  $("#principles").innerHTML = list.map((p) => `<div><b>${esc(p.title)}</b><span>${esc(p.body)}</span></div>`).join("");
+}
+
+/* ---------- badges ---------- */
+function renderChips() {
+  const all = [{ id: "all", color: "var(--muted)", name: t("badges.all") },
+    ...PILLAR_ORDER.map((p) => ({ ...p, name: pick(`pillars.${p.id}.name`) }))];
+  $("#chips").innerHTML = all.map((p) =>
+    `<button type="button" class="chip" style="--c:${p.color}" aria-pressed="${filter === p.id}" data-f="${p.id}"><i class="dot"></i>${esc(p.name)}</button>`).join("");
+}
+function badgeSvg(glyph) {
+  return `<svg viewBox="0 0 56 56" aria-hidden="true"><circle class="ring" cx="28" cy="28" r="26"/><circle class="disc" cx="28" cy="28" r="20"/><text class="glyph" x="28" y="35" text-anchor="middle">${esc(glyph)}</text></svg>`;
+}
+function renderGrid() {
+  $("#grid").innerHTML = BADGE_ORDER.map((b) => {
+    if (filter !== "all" && b.p !== filter) return "";
+    const color = PILLAR_ORDER.find((p) => p.id === b.p).color, on = earned.has(b.id);
+    const f = (k) => esc(pick(`badges.${b.id}.${k}`));
+    return `<article class="card${on ? " earned" : ""}" style="--c:${color}">
+      <div class="badge">${badgeSvg(pick(`pillars.${b.p}.glyph`))}</div>
+      <span class="tag">${esc(pick(`pillars.${b.p}.name`))}</span>
+      <h3>${f("title")}</h3>
+      <p class="rule">${f("rule")}</p>
+      <details><summary>${esc(t("badges.details"))}</summary>
+        <div class="detail">
+          <p class="why">${f("why")}</p>
+          <div class="ex do"><b>${esc(t("badges.do"))}</b><span>${f("good")}</span></div>
+          <div class="ex dont"><b>${esc(t("badges.instead"))}</b><span>${f("bad")}</span></div>
+        </div>
+      </details>
+      <button type="button" class="claim" data-id="${b.id}" aria-pressed="${on}">${esc(t(on ? "badges.claimed" : "badges.claim"))}</button>
+    </article>`;
+  }).join("");
+  renderMeter();
+}
+function renderMeter() {
+  const n = earned.size, total = BADGE_ORDER.length, C = 2 * Math.PI * 70;
+  $("#meterArc").setAttribute("stroke-dasharray", `${(n / total) * C} ${C}`);
+  $("#meterNum").textContent = n;
+  $("#meterDen").textContent = t("meter.of", { n: total, total });
+  $("#rank").textContent = pick(`ranks.${RANKS.filter(([min]) => n >= min).pop()[1]}`);
+}
+$("#chips").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-f]"); if (!b) return;
+  filter = b.dataset.f; renderChips(); renderGrid();
+});
+$("#grid").addEventListener("click", (e) => {
+  const b = e.target.closest(".claim"); if (!b) return;
+  const id = b.dataset.id;
+  if (earned.has(id)) earned.delete(id); else { earned.add(id); later.delete(id); toast(t("badges.toastClaimed", { title: pick(`badges.${id}.title`) })); }
+  save(); renderGrid();
+});
+$("#resetAll").addEventListener("click", () => { earned.clear(); later.clear(); tour = freshTour(); save(); renderGrid(); renderCta(); toast(t("footer.toastReset")); });
+
+/* ---------- quiz ---------- */
+let qi = 0, results = [];
+function renderQuiz() {
+  const box = $("#quizBox"), total = QUIZ_ORDER.length;
+  const pips = QUIZ_ORDER.map((_, i) => `<i class="pip ${results[i] === true ? "right" : results[i] === false ? "wrong" : i === qi ? "now" : ""}"></i>`).join("");
+  if (qi >= total) {
+    const score = results.filter(Boolean).length;
+    const msg = t(score === total ? "quiz.perfect" : score >= total - 2 ? "quiz.good" : "quiz.retry");
+    box.innerHTML = `<div class="quiz-top"><span class="eyebrow">${esc(t("quiz.done"))}</span><div class="pips">${pips}</div></div>
+      <p class="scenario">${esc(t("quiz.score", { score, total, n: score }))} ${esc(msg)}</p>
+      <div><button class="btn" type="button" id="qAgain">${esc(t("quiz.again"))}</button></div>`;
+    $("#qAgain").onclick = () => { qi = 0; results = []; renderQuiz(); };
+    return;
+  }
+  const q = QUIZ_ORDER[qi], f = (k) => esc(pick(`quiz.${q.id}.${k}`));
+  const answered = results[qi] !== undefined;
+  box.innerHTML = `<div class="quiz-top"><span class="eyebrow">${esc(t("quiz.progress", { n: qi + 1, total }))}</span><div class="pips">${pips}</div></div>
+    <p class="scenario">${f("s")}</p>
+    <div class="opts">
+      ${["a", "b"].map((k) => `<button class="opt" type="button" data-k="${k}"><span class="lab">${esc(t("quiz.option", { letter: t(`quiz.letter.${k}`) }))}</span><span>${f(k)}</span></button>`).join("")}
+    </div>
+    <div class="verdict" id="verdict" hidden></div>`;
+  const reveal = (picked) => {
+    const right = picked === q.ok;
+    results[qi] = right; box.dataset.picked = picked;
+    box.querySelectorAll(".opt").forEach((o) => { o.disabled = true; if (o.dataset.k === q.ok) o.classList.add("right"); else if (o.dataset.k === picked) o.classList.add("wrong"); });
+    const v = $("#verdict"); v.hidden = false;
+    v.innerHTML = `<p><b>${esc(t(right ? "quiz.right" : "quiz.wrong"))}</b> ${f("why")}</p><button class="btn" type="button" id="qNext">${esc(t(qi + 1 < total ? "quiz.next" : "quiz.seeScore"))}</button>`;
+    $("#qNext").onclick = () => { qi++; delete box.dataset.picked; renderQuiz(); };
+    return right;
+  };
+  box.querySelectorAll(".opt").forEach((btn) => btn.addEventListener("click", () => { reveal(btn.dataset.k); $("#qNext").focus(); }));
+  if (answered && box.dataset.picked) reveal(box.dataset.picked); // keep state across a language switch
+}
+
+/* ---------- meeting flight check ---------- */
+function renderPhases() {
+  $("#phases").innerHTML = PHASE_ORDER.map((ph, pi) => `<div class="phase">
+    <div class="phase-h"><span class="n">${pi + 1}</span><h3>${esc(pick(`phases.${ph.id}.title`))}</h3></div>
+    ${ph.items.map((item) => {
+      const id = `m-${ph.id}-${item}`, [b, s] = pick(`phases.${ph.id}.items.${item}`);
+      return `<label class="check" for="${id}">
+      <input type="checkbox" id="${id}" ${meetChecks.has(id) ? "checked" : ""}>
+      <span><b>${esc(b)}</b><small>${esc(s)}</small></span></label>`; }).join("")}
+  </div>`).join("");
+  updateMeetCount();
+}
+function updateMeetCount() {
+  const total = PHASE_ORDER.reduce((a, p) => a + p.items.length, 0), n = meetChecks.size;
+  $("#meetCount").textContent = n === total ? t("meet.allClear") : t("meet.count", { n, total });
+}
+$("#phases").addEventListener("change", (e) => {
+  if (e.target.type !== "checkbox") return;
+  e.target.checked ? meetChecks.add(e.target.id) : meetChecks.delete(e.target.id);
+  save(); updateMeetCount();
+});
+$("#meetReset").addEventListener("click", () => { meetChecks.clear(); save(); renderPhases(); toast(t("meet.toastReset")); });
+$("#copyTpl").addEventListener("click", async () => {
+  const text = pick("notesTemplate");
+  try { await navigator.clipboard.writeText(text); toast(t("meet.copied")); }
+  catch { const r = document.createRange(); r.selectNodeContents($("#tpl")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast(t("meet.selected")); }
+});
+
+/* ---------- payroll calendar ---------- */
+const today = new Date();
+let view = new Date(today.getFullYear(), today.getMonth(), 1);
+let wiggle = 5;
+function classify(day, dim, w) {
+  if (PAYROLL_WEEKS.some(([a, b]) => day >= a && day <= b)) return "core";
+  const near = PAYROLL_WEEKS.some(([a, b]) => day >= a - w && day <= b + w) || day > dim - w; // last days fall into next month's 1st week
+  return near ? "wiggle" : "";
+}
+function renderCal() {
+  const loc = L().meta.dateLocale || lang, start = L().meta.weekStartsOn ?? 1;
+  const y = view.getFullYear(), m = view.getMonth(), dim = new Date(y, m + 1, 0).getDate();
+  const lead = (new Date(y, m, 1).getDay() - start + 7) % 7;
+  $("#calTitle").textContent = view.toLocaleDateString(loc, { month: "long", year: "numeric" });
+  const dowFmt = new Intl.DateTimeFormat(loc, { weekday: "short" });
+  let html = Array.from({ length: 7 }, (_, i) => `<span class="dow">${esc(dowFmt.format(new Date(2024, 0, 7 + start + i)))}</span>`).join(""); // Jan 7 2024 is a Sunday
+  html += `<span class="day blank"></span>`.repeat(lead);
+  let covered = 0;
+  for (let d = 1; d <= dim; d++) {
+    const c = classify(d, dim, wiggle); if (c) covered++;
+    const isToday = y === today.getFullYear() && m === today.getMonth() && d === today.getDate();
+    html += `<span class="day ${c}${isToday ? " today" : ""}">${d}</span>`;
+  }
+  $("#days").innerHTML = html;
+  $("#coverage").textContent = new Intl.NumberFormat(loc, { style: "percent" }).format(covered / dim);
+  $("#wiggleVal").textContent = wiggle ? t("pay.wiggleDays", { n: wiggle }) : t("pay.wiggleNone");
+  $("#coverageNote").textContent = wiggle >= 4 ? t("pay.noteHigh", { w: wiggle, covered, dim, n: dim }) : t("pay.noteLow");
+}
+$("#wiggle").addEventListener("input", (e) => { wiggle = +e.target.value; renderCal(); });
+$("#prevM").addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderCal(); });
+$("#nextM").addEventListener("click", () => { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderCal(); });
+
+/* ---------- guided mode: one step at a time, resumable ---------- */
+const STEPS = [
+  { kind: "intro", sec: "start" },
+  { kind: "principles", sec: "start" },
+  ...BADGE_ORDER.map((b) => ({ kind: "badge", id: b.id, sec: "badges" })),
+  ...QUIZ_ORDER.map((q) => ({ kind: "quiz", id: q.id, sec: "quiz" })),
+  { kind: "meeting", sec: "meetings" },
+  { kind: "payroll", sec: "time" },
+  { kind: "finish", sec: "finish" },
+];
+const SECS = ["start", "badges", "quiz", "meetings", "time", "finish"];
+let lastFocus = null;
+
+function renderCta() {
+  const total = STEPS.length, saved = t(sync.mode === "account" ? "tour.savedAccount" : "tour.savedLocal");
+  let html;
+  if (tour.finished) {
+    html = `<button class="btn" type="button" data-tour="again">${esc(t("tour.again"))}</button>
+      <span class="cta-note">${esc(t("tour.finishedNote", { n: earned.size }))}</span>`;
+  } else if (tour.started) {
+    html = `<button class="btn" type="button" data-tour="resume">${esc(t("tour.continue", { n: Math.min(tour.step + 1, total), total }))}</button>
+      <button class="btn ghost" type="button" data-tour="again">${esc(t("tour.restart"))}</button>
+      <span class="cta-note">${esc(saved)}</span>`;
+  } else {
+    html = `<button class="btn" type="button" data-tour="resume">${esc(t("tour.start"))}</button>
+      <span class="cta-note">${esc(t("tour.startNote"))} ${esc(saved)}</span>`;
+  }
+  $("#cta").innerHTML = html;
+}
+$("#cta").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-tour]"); if (!b) return;
+  if (b.dataset.tour === "again") { tour = freshTour(); later.clear(); }
+  openTour();
+});
+
+function openTour() {
+  lastFocus = document.activeElement;
+  tour.started = true;
+  tour.step = Math.min(Math.max(tour.step, 0), STEPS.length - 1);
+  save();
+  $("#tour").hidden = false; document.body.classList.add("tour-open");
+  renderTour();
+}
+function closeTour() {
+  $("#tour").hidden = true; document.body.classList.remove("tour-open");
+  save(); renderCta(); renderGrid();
+  if (lastFocus && lastFocus.isConnected) lastFocus.focus(); else $("#cta .btn")?.focus();
+}
+function go(delta) {
+  tour.step = Math.min(Math.max(tour.step + delta, 0), STEPS.length - 1);
+  if (STEPS[tour.step].kind === "finish") tour.finished = true;
+  save(); renderTour();
+}
+function tourBadge(pillarId, glyph, on) {
+  const color = PILLAR_ORDER.find((p) => p.id === pillarId).color;
+  return `<div class="tour-badge${on ? " earned" : ""}" style="--c:${color}">
+    <svg viewBox="0 0 56 56" aria-hidden="true"><circle class="ring" cx="28" cy="28" r="26"/><circle class="disc" cx="28" cy="28" r="20"/><text class="glyph" x="28" y="35" text-anchor="middle">${esc(glyph)}</text></svg>
+    <span class="tag">${esc(pick(`pillars.${pillarId}.name`))}</span></div>`;
+}
+function monthCoverage() {
+  const y = today.getFullYear(), m = today.getMonth(), dim = new Date(y, m + 1, 0).getDate();
+  let c = 0; for (let d = 1; d <= dim; d++) if (classify(d, dim, 5)) c++;
+  return new Intl.NumberFormat(L().meta.dateLocale || lang, { style: "percent" }).format(c / dim);
+}
+function renderTour() {
+  if ($("#tour").hidden) return;
+  const step = STEPS[tour.step], total = STEPS.length;
+  // segmented progress, one segment per section
+  $("#tourSecs").innerHTML = SECS.map((s) => {
+    const idx = STEPS.map((st, i) => (st.sec === s ? i : -1)).filter((i) => i >= 0);
+    const done = idx.filter((i) => i < tour.step).length + (step.sec === s ? 1 : 0);
+    return `<div class="seg${step.sec === s ? " on" : ""}"><span>${esc(t(`tour.sec.${s}`))}</span><i><b style="width:${(done / idx.length) * 100}%"></b></i></div>`;
+  }).join("");
+  $("#tourCount").textContent = t("tour.step", { n: tour.step + 1, total });
+  $("#tourBack").disabled = tour.step === 0;
+
+  let body = "", actions = "";
+  const next = `<button class="btn" type="button" data-act="next">${esc(t("tour.next"))}</button>`;
+  if (step.kind === "intro") {
+    body = `<span class="eyebrow">${esc(t("hero.eyebrow"))}</span>
+      <h2 tabindex="-1">${esc(t("tour.introTitle"))}</h2>
+      <p class="lede">${esc(t("tour.introBody", { badges: BADGE_ORDER.length, quiz: QUIZ_ORDER.length }))}</p>
+      <p class="lede">${esc(t(sync.mode === "account" ? "tour.savedAccount" : "tour.savedLocal"))}</p>`;
+    actions = next;
+  } else if (step.kind === "principles") {
+    body = `<h2 tabindex="-1">${esc(t("tour.principlesTitle"))}</h2>
+      <div class="why-strip" style="margin:0">${pick("principles").map((p) => `<div><b>${esc(p.title)}</b><span>${esc(p.body)}</span></div>`).join("")}</div>`;
+    actions = next;
+  } else if (step.kind === "badge") {
+    const b = BADGE_ORDER.find((x) => x.id === step.id), f = (k) => esc(pick(`badges.${b.id}.${k}`));
+    const on = earned.has(b.id), isLater = later.has(b.id);
+    body = `${tourBadge(b.p, pick(`pillars.${b.p}.glyph`), on)}
+      <h2 tabindex="-1">${f("title")}</h2>
+      <p class="big-rule">${f("rule")}</p>
+      <p class="lede">${f("why")}</p>
+      <div class="ex do"><b>${esc(t("badges.do"))}</b><span>${f("good")}</span></div>
+      <div class="ex dont"><b>${esc(t("badges.instead"))}</b><span>${f("bad")}</span></div>
+      ${on || isLater ? `<p class="eyebrow">${esc(t(on ? "tour.isClaimed" : "tour.isLater"))}</p>` : ""}`;
+    actions = `<button class="btn ghost" type="button" data-act="later">${esc(t("tour.workOn"))}</button>
+      <button class="btn" type="button" data-act="claim">${esc(t("tour.doThis"))}</button>`;
+  } else if (step.kind === "quiz") {
+    const q = QUIZ_ORDER.find((x) => x.id === step.id), f = (k) => esc(pick(`quiz.${q.id}.${k}`));
+    const picked = tour.answers[q.id], n = QUIZ_ORDER.indexOf(q) + 1;
+    const cls = (k) => (!picked ? "" : k === q.ok ? " right" : k === picked ? " wrong" : "");
+    body = `<span class="eyebrow">${esc(t("quiz.progress", { n, total: QUIZ_ORDER.length }))}</span>
+      <h2 tabindex="-1">${f("s")}</h2>
+      <div class="opts">${["a", "b"].map((k) => `<button class="opt${cls(k)}" type="button" data-pick="${k}" ${picked ? "disabled" : ""}><span class="lab">${esc(t("quiz.option", { letter: t(`quiz.letter.${k}`) }))}</span><span>${f(k)}</span></button>`).join("")}</div>
+      ${picked ? `<p><b>${esc(t(picked === q.ok ? "quiz.right" : "quiz.wrong"))}</b> ${f("why")}</p>` : ""}`;
+    actions = picked ? next : "";
+  } else if (step.kind === "meeting") {
+    body = `<h2 tabindex="-1">${esc(t("tour.meetingTitle"))}</h2>
+      <p class="lede">${esc(t("tour.meetingBody"))}</p>
+      <div class="tour-mini">${PHASE_ORDER.map((ph, i) => `<div class="phase"><div class="phase-h"><span class="n">${i + 1}</span><h3>${esc(pick(`phases.${ph.id}.title`))}</h3></div>
+        <ul>${ph.items.map((it) => `<li>${esc(pick(`phases.${ph.id}.items.${it}`)[0])}</li>`).join("")}</ul></div>`).join("")}</div>`;
+    actions = next;
+  } else if (step.kind === "payroll") {
+    body = `<h2 tabindex="-1">${esc(t("tour.payTitle"))}</h2>
+      <p class="lede">${esc(t("tour.payBody", { pct: monthCoverage() }))}</p>
+      <div class="daily"><h3>${esc(t("daily.title"))}</h3><ol>${pick("dailySteps").map((s) => `<li>${esc(s)}</li>`).join("")}</ol></div>`;
+    actions = next;
+  } else {
+    const score = QUIZ_ORDER.filter((q) => tour.answers[q.id] === q.ok).length;
+    const practice = BADGE_ORDER.filter((b) => later.has(b.id) && !earned.has(b.id));
+    body = `<h2 tabindex="-1">${esc(t("tour.finishTitle"))}</h2>
+      <p class="big-rule">${esc(t("tour.finishClaimed", { n: earned.size, total: BADGE_ORDER.length }))} ${esc(t("tour.finishQuiz", { score, total: QUIZ_ORDER.length }))}</p>
+      <h3>${esc(t("tour.finishPractice"))}</h3>
+      ${practice.length ? `<div class="later-list">${practice.map((b) => `<span>${esc(pick(`badges.${b.id}.title`))}</span>`).join("")}</div>` : `<p class="lede">${esc(t("tour.finishNone"))}</p>`}`;
+    actions = `<button class="btn ghost" type="button" data-act="again">${esc(t("tour.restart"))}</button>
+      <button class="btn" type="button" data-act="close">${esc(t("tour.close"))}</button>`;
+  }
+  $("#tourBody").innerHTML = body;
+  $("#tourBody").scrollTop = 0;
+  $("#tourActions").innerHTML = actions;
+  $("#tourBody h2").focus({ preventScroll: true });
+}
+$("#tourBody").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-pick]"); if (!b) return;
+  const step = STEPS[tour.step];
+  tour.answers[step.id] = b.dataset.pick; save(); renderTour();
+  $("#tourActions .btn")?.focus();
+});
+$("#tourActions").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-act]"); if (!b) return;
+  const step = STEPS[tour.step], act = b.dataset.act;
+  if (act === "claim") { earned.add(step.id); later.delete(step.id); go(1); }
+  else if (act === "later") { later.add(step.id); earned.delete(step.id); go(1); }
+  else if (act === "next") go(1);
+  else if (act === "again") { tour = freshTour(); tour.started = true; later.clear(); save(); renderTour(); }
+  else if (act === "close") closeTour();
+});
+$("#tourBack").addEventListener("click", () => go(-1));
+$("#tourExit").addEventListener("click", closeTour);
+document.addEventListener("keydown", (e) => {
+  if ($("#tour").hidden) return;
+  if (e.key === "Escape") { e.preventDefault(); closeTour(); return; }
+  if (e.key === "Tab") { // keep focus inside the dialog
+    const f = [...$("#tour").querySelectorAll("button:not(:disabled), [tabindex='-1']")].filter((el) => el.offsetParent !== null);
+    if (!f.length) return;
+    const first = f[0], last = f[f.length - 1];
+    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+  }
+});
+
+function renderAll() {
+  applyStatic(); renderLangPicker(); renderPrinciples(); renderCta();
+  renderChips(); renderGrid(); renderQuiz(); renderPhases(); renderCal();
+  $("#dailySteps").innerHTML = pick("dailySteps").map((s) => `<li>${esc(s)}</li>`).join("");
+  $("#tpl").textContent = pick("notesTemplate");
+  renderTour();
+}
+renderAll();
+connectAccount();
+</script>
+
+<div id="gate">
+  <form id="gateForm">
+    <h1>Client Experience Playbook</h1>
+    <p>Enter the team access code.<br><span lang="uk">Введіть код доступу команди.</span></p>
+    <input id="gateCode" type="password" autocomplete="off" aria-label="Access code / Код доступу" required>
+    <button type="submit">Open · Відкрити</button>
+    <p class="err" id="gateErr" role="alert"></p>
+  </form>
+</div>
+<script>
+  document.getElementById("gateForm").addEventListener("submit", (e) => {
+    e.preventDefault();
+    const code = document.getElementById("gateCode").value.trim().toLowerCase();
+    if (code === "musebadges") {
+      try { localStorage.setItem("cxp:gate", "ok"); } catch (err) {}
+      document.documentElement.classList.remove("locked");
+    } else {
+      document.getElementById("gateErr").textContent = "That code didn't work. · Код не підходить.";
+    }
+  });
+</script>
+</html>
